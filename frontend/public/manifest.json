@@ -1,0 +1,16 @@
+{
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "name": "Whois IP&Domain PWA",
+  "short_name": "Whois",
+  "icons": [
+    {
+      "src": "/icon-whois.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+}
