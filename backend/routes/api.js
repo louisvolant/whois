@@ -8,6 +8,5 @@ const router = express.Router();
 
 router.use(ipApi);
 router.use(domainApi);
-//router.use(csrfApi);
 
 export default router;
