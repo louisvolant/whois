@@ -1,4 +1,4 @@
-// routes/api.js
+// backend/src/routes/api.js
 import express from 'express';
 import ipApi from './ip_api.js';
 import domainApi from './domain_api.js';

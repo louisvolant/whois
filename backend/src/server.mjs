@@ -1,4 +1,4 @@
-// backend/server.mjs
+// backend/src/server.ts
 import dotenv from 'dotenv';
 import express from 'express';
 import session from 'express-session';
