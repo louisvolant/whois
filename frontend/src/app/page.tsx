@@ -1,8 +1,9 @@
 // frontend/src/app/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getClientIP, getWhoisIP, getWhoisDomain, fetchCsrfToken } from "../lib/api";
+import { RefreshCcw } from 'lucide-react';
 
 // --- HELPER: Extract Country and Description ---
 function parseWhois(rawText: string) {
@@ -49,25 +50,36 @@ export default function Home() {
   const [ipWhois, setIpWhois] = useState<any>(null);
   const [input, setInput] = useState("");
   const [queryResult, setQueryResult] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchClientConnection = useCallback(async () => {
+    setIsRefreshing(true); // Start refreshing state
+    try {
+      // 1. Fetch IP
+      const data = await getClientIP();
+      setClientIP(data.ip);
+
+      // 2. Fetch WHOIS if IP is available
+      if (data.ip) {
+          const whoisData = await getWhoisIP(data.ip);
+          setIpWhois(whoisData);
+      }
+    } catch (err) {
+      console.error("Failed to load client connection data:", err);
+      // Optional: setIpWhois(null) or a custom error state
+    } finally {
+      setIsRefreshing(false); // Stop refreshing state
+    }
+  }, []); // Empty dependency array means this function is created once
 
   useEffect(() => {
     fetchCsrfToken().catch((err) => console.error('CSRF token fetch failed:', err));
   }, []);
 
+  // Initial load logic now calls the dedicated function
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await getClientIP();
-        setClientIP(data.ip);
-        if (data.ip) {
-            const whoisData = await getWhoisIP(data.ip);
-            setIpWhois(whoisData);
-        }
-      } catch (err) {
-        console.error("Failed to load client IP:", err);
-      }
-    })();
-  }, []);
+    fetchClientConnection();
+  }, [fetchClientConnection]); // Dependency on fetchClientConnection is needed because it's wrapped in useCallback
 
   function looksLikeIP(value: string) {
     return /^\d{1,3}(\.\d{1,3}){3}$/.test(value.trim());
@@ -105,17 +117,27 @@ export default function Home() {
 
         {/* SECTION 1: Your Information */}
         <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
              <h2 className="text-lg font-semibold flex items-center gap-2">
                 📍 Your Connection
              </h2>
+             {/* REFRESH BUTTON */}
+             <button
+                onClick={fetchClientConnection}
+                disabled={isRefreshing}
+                className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-wait rounded-full"
+                title="Refresh Connection Data"
+             >
+                <RefreshCcw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+             </button>
+             {/* END REFRESH BUTTON */}
           </div>
 
           <div className="p-6 space-y-6">
             <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Your IP Address</label>
                 <div className="mt-1 text-2xl font-mono text-blue-600 dark:text-blue-400 font-medium">
-                    {clientIP || "Loading..."}
+                    {clientIP || (isRefreshing ? "Refreshing..." : "Loading...")}
                 </div>
                 {/* --- SUMMARY --- */}
                 {whoisSummary && (
