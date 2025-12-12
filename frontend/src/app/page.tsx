@@ -4,16 +4,27 @@
 import { useEffect, useState } from "react";
 import { getClientIP, getWhoisIP, getWhoisDomain, fetchCsrfToken } from "../lib/api";
 
-// --- New Helper Component for cleaner display ---
+// --- HELPER: Extract Country and Description ---
+function parseWhois(rawText: string) {
+  if (!rawText || typeof rawText !== 'string') return null;
+
+  // Regex to find 'country: XX' and 'descr: YYY'
+  const countryMatch = rawText.match(/^country:\s*(.+)$/m);
+  const descrMatch = rawText.match(/^descr:\s*(.+)$/m);
+
+  const country = countryMatch ? countryMatch[1].trim() : null;
+  const descr = descrMatch ? descrMatch[1].trim() : null;
+
+  if (!country && !descr) return null;
+
+  // Return the format: "BE - Zscaler Brussels"
+  return `${country || "Unknown"} - ${descr || "No description"}`;
+}
+
 function WhoisDisplay({ data }: { data: any }) {
   if (!data) return <p className="text-gray-500 italic">Loading...</p>;
 
-  // 1. Extract the text content
-  // We check if 'data.raw' exists (from our backend fix), otherwise fallback to JSON
   const content = data.raw ? data.raw : JSON.stringify(data, null, 2);
-
-  // 2. Check if it's a short message (like the localhost warning)
-  // If it's short and has no newlines, make it a nice UI alert instead of a code block
   const isSimpleMessage = typeof content === 'string' && content.length < 150 && !content.includes('\n');
 
   if (isSimpleMessage) {
@@ -24,7 +35,6 @@ function WhoisDisplay({ data }: { data: any }) {
     );
   }
 
-  // 3. Otherwise, render the full WHOIS text preserving formatting
   return (
     <div className="relative group">
       <pre className="text-xs md:text-sm font-mono whitespace-pre-wrap overflow-x-auto bg-slate-100 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
@@ -37,23 +47,18 @@ function WhoisDisplay({ data }: { data: any }) {
 export default function Home() {
   const [clientIP, setClientIP] = useState<string | null>(null);
   const [ipWhois, setIpWhois] = useState<any>(null);
-
   const [input, setInput] = useState("");
   const [queryResult, setQueryResult] = useState<any>(null);
 
-  // Initial setup
   useEffect(() => {
     fetchCsrfToken().catch((err) => console.error('CSRF token fetch failed:', err));
   }, []);
 
-  // Fetch client IP and its WHOIS on load
   useEffect(() => {
     (async () => {
       try {
         const data = await getClientIP();
         setClientIP(data.ip);
-
-        // Only fetch whois if we successfully got an IP
         if (data.ip) {
             const whoisData = await getWhoisIP(data.ip);
             setIpWhois(whoisData);
@@ -71,11 +76,9 @@ export default function Home() {
   async function handleLookup() {
     if(!input) return;
     setQueryResult(null);
-
     try {
       const cleanInput = input.trim();
       let result;
-
       if (looksLikeIP(cleanInput)) {
         result = await getWhoisIP(cleanInput);
         setQueryResult({ type: "IP", value: cleanInput, data: result });
@@ -85,9 +88,11 @@ export default function Home() {
       }
     } catch (err) {
       setQueryResult({ error: "Lookup failed. Please check the format or try again." });
-      console.error("Lookup error:", err);
     }
   }
+
+  // Determine the summary line for the connection section
+  const whoisSummary = ipWhois?.raw ? parseWhois(ipWhois.raw) : null;
 
   return (
     <main className="min-h-screen p-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100">
@@ -112,6 +117,12 @@ export default function Home() {
                 <div className="mt-1 text-2xl font-mono text-blue-600 dark:text-blue-400 font-medium">
                     {clientIP || "Loading..."}
                 </div>
+                {/* --- SUMMARY --- */}
+                {whoisSummary && (
+                  <div className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {whoisSummary}
+                  </div>
+                )}
             </div>
 
             <div>
@@ -148,7 +159,6 @@ export default function Home() {
                 </button>
             </div>
 
-            {/* Results Area */}
             {queryResult && (
                 <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {queryResult.error ? (
@@ -162,6 +172,12 @@ export default function Home() {
                                     Result for {queryResult.type}: <span className="text-gray-900 dark:text-white">{queryResult.value}</span>
                                 </span>
                             </div>
+                            {/* Optional: Add summary for lookup results too */}
+                            {queryResult.data?.raw && (
+                              <div className="text-sm font-bold text-blue-500 mb-2">
+                                {parseWhois(queryResult.data.raw)}
+                              </div>
+                            )}
                             <WhoisDisplay data={queryResult.data} />
                         </div>
                     )}
@@ -169,7 +185,6 @@ export default function Home() {
             )}
           </div>
         </section>
-
       </div>
     </main>
   );
