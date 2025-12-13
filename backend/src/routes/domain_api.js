@@ -1,9 +1,11 @@
 // backend/src/routes/domain_api.js
 import express from 'express';
 import winston from 'winston';
+import apicache from 'apicache';
 import { whoisDomain } from 'whoiser';
 
 const router = express.Router();
+const cache = apicache.middleware;
 
 const logger = winston.createLogger({
   level: 'info',
@@ -59,7 +61,7 @@ function getRaw(results) {
 }
 
 // Endpoint GET avec parsing JSON
-router.get('/domain-whois', async (req, res) => {
+router.get('/domain-whois', cache('2 minute'), async (req, res) => {
   const input = req.query.domain;
   const domain = extractDomain(input);
 
@@ -73,19 +75,6 @@ router.get('/domain-whois', async (req, res) => {
     res.json({ domain, whois: parsed });
   } catch (err) {
     logger.error(`WHOIS error for ${domain}`, { error: err.message });
-    res.status(500).json({ error: "WHOIS lookup failed" });
-  }
-});
-
-// Endpoint brut sans parsing
-router.get('/whois/:target', async (req, res) => {
-  const { target } = req.params;
-
-  try {
-    const data = await whoisDomain(target, { follow: 3, raw: true });
-    const raw = getRaw(data);
-    res.json({ raw });
-  } catch (err) {
     res.status(500).json({ error: "WHOIS lookup failed" });
   }
 });

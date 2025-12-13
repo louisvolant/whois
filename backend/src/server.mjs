@@ -83,7 +83,7 @@ app.use('/api', csrfProtection, tokenRouter);
 // 3. Mount the main API routes with the cache middleware
 // Since apiRoutes contains ip_api.js and domain_api.js, and they need protection,
 // we apply csrfProtection directly to the apiRoutes block.
-app.use('/api', cache, csrfProtection, apiRoutes); // apiRoutes still needs to be protected
+app.use('/api', csrfProtection, apiRoutes);
 
 // Error handling for CSRF token validation failures
 app.use((err, req, res, next) => {

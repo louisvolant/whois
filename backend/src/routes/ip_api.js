@@ -1,9 +1,11 @@
 // backend/src/routes/ip_api.js
 import express from 'express';
 import winston from 'winston';
+import apicache from 'apicache';
 import { whoisIp } from 'whoiser';
 
 const router = express.Router();
+const cache = apicache.middleware;
 
 const logger = winston.createLogger({
   level: 'info',
@@ -13,6 +15,11 @@ const logger = winston.createLogger({
     new winston.transports.Console(),
   ],
 });
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  return forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress;
+}
 
 function getRaw(results) {
   if (typeof results !== 'object' || results === null) return '';
@@ -25,13 +32,13 @@ function getRaw(results) {
     .join('\n\n---\n\n');
 }
 
-router.get('/ip', (req, res) => {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded ? forwarded.split(',')[0] : req.socket.remoteAddress;
-  res.json({ ip });
-});
 
-router.get('/whois/:ip', async (req, res) => {
+router.get('/ip', cache('2 seconds',(req, res) => req.method === 'GET', { appendKey: (req) => getClientIp(req) } ), (req, res) => {
+    res.json({ ip: getClientIp(req) });
+  }
+);
+
+router.get('/whois/:ip', cache('1 minute'), async (req, res) => {
   const { ip } = req.params;
 
   if (ip === '::1' || ip === '127.0.0.1' || ip === 'localhost') {
