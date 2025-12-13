@@ -9,17 +9,17 @@ import { RefreshCcw } from 'lucide-react';
 function parseWhois(rawText: string) {
   if (!rawText || typeof rawText !== 'string') return null;
 
-  // Regex to find 'country: XX' and 'descr: YYY'
+  // Regex to find 'country: XX' and 'netname: YYY'
   const countryMatch = rawText.match(/^country:\s*(.+)$/m);
-  const descrMatch = rawText.match(/^descr:\s*(.+)$/m);
+  const netnameMatch = rawText.match(/^netname:\s*(.+)$/m);
 
   const country = countryMatch ? countryMatch[1].trim() : null;
-  const descr = descrMatch ? descrMatch[1].trim() : null;
+  const netname = netnameMatch ? netnameMatch[1].trim() : null;
 
-  if (!country && !descr) return null;
+  if (!country && !netname) return null;
 
   // Return the format: "BE - Zscaler Brussels"
-  return `${country || "Unknown"} - ${descr || "No description"}`;
+  return `${country || "Unknown"} - ${netname || "No description"}`;
 }
 
 function WhoisDisplay({ data }: { data: any }) {
