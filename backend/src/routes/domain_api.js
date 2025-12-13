@@ -1,7 +1,7 @@
 // backend/src/routes/domain_api.js
 import express from 'express';
 import winston from 'winston';
-import whois from 'node-whois';
+import { whoisDomain } from 'whoiser';
 
 const router = express.Router();
 
@@ -36,39 +36,30 @@ function extractDomain(input) {
   }
 }
 
-// simple parser pour transformer le texte brut en JSON
-function parseWhois(raw) {
-  const lines = raw.split('\n');
-  const result = {};
+function mergeWhois(results) {
+  if (typeof results !== 'object' || results === null) return results;
 
-  for (let line of lines) {
-    line = line.trim();
-    if (!line || line.startsWith('%') || line.startsWith('#')) continue;
+  let merged = {};
+  const values = Object.values(results).filter(part => typeof part === 'object' && part !== null);
+  values.forEach(part => {
+    Object.assign(merged, part);
+  });
+  return merged;
+}
 
-    const [key, ...rest] = line.split(':');
-    if (!rest.length) continue;
+function getRaw(results) {
+  if (typeof results !== 'object' || results === null) return '';
 
-    const value = rest.join(':').trim();
-    if (!key) continue;
+  if (results.__raw) return results.__raw;
 
-    // si la clé existe déjà, on stocke en array
-    const normalizedKey = key.trim().replace(/\s+/g, '_');
-    if (result[normalizedKey]) {
-      if (Array.isArray(result[normalizedKey])) {
-        result[normalizedKey].push(value);
-      } else {
-        result[normalizedKey] = [result[normalizedKey], value];
-      }
-    } else {
-      result[normalizedKey] = value;
-    }
-  }
-
-  return result;
+  return Object.values(results)
+    .map(part => part.__raw || '')
+    .filter(Boolean)
+    .join('\n\n---\n\n');
 }
 
 // Endpoint GET avec parsing JSON
-router.get('/domain-whois', (req, res) => {
+router.get('/domain-whois', async (req, res) => {
   const input = req.query.domain;
   const domain = extractDomain(input);
 
@@ -76,28 +67,27 @@ router.get('/domain-whois', (req, res) => {
     return res.status(400).json({ error: "Invalid domain" });
   }
 
-  whois.lookup(domain, { follow: 3 }, (err, data) => {
-    if (err) {
-      logger.error(`WHOIS error for ${domain}`, { error: err.message });
-      return res.status(500).json({ error: "WHOIS lookup failed" });
-    }
-
-    const parsed = parseWhois(data);
+  try {
+    const data = await whoisDomain(domain, { follow: 3 });
+    const parsed = mergeWhois(data);
     res.json({ domain, whois: parsed });
-  });
+  } catch (err) {
+    logger.error(`WHOIS error for ${domain}`, { error: err.message });
+    res.status(500).json({ error: "WHOIS lookup failed" });
+  }
 });
 
 // Endpoint brut sans parsing
-router.get('/whois/:target', (req, res) => {
+router.get('/whois/:target', async (req, res) => {
   const { target } = req.params;
 
-  whois.lookup(target, { follow: 3 }, (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: "WHOIS lookup failed" });
-    }
-
-    res.json({ raw: data });
-  });
+  try {
+    const data = await whoisDomain(target, { follow: 3, raw: true });
+    const raw = getRaw(data);
+    res.json({ raw });
+  } catch (err) {
+    res.status(500).json({ error: "WHOIS lookup failed" });
+  }
 });
 
 export default router;
