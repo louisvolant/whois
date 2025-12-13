@@ -10,11 +10,15 @@ function parseWhois(rawText: string) {
   if (!rawText || typeof rawText !== 'string') return null;
 
   // Regex to find 'country: XX' and 'netname: YYY'
-  const countryMatch = rawText.match(/^country:\s*(.+)$/m);
-  const netnameMatch = rawText.match(/^netname:\s*(.+)$/m);
+  const countryMatch = rawText.match(/^\s*country\s*:\s*(.+)$/im);
+  const netnameMatch =
+    rawText.match(/^\s*netname\s*:\s*(.+)$/im) ||
+    rawText.match(/^\s*(org-name|descr)\s*:\s*(.+)$/im);
 
   const country = countryMatch ? countryMatch[1].trim() : null;
-  const netname = netnameMatch ? netnameMatch[1].trim() : null;
+  const netname = netnameMatch
+    ? netnameMatch[2] ?? netnameMatch[1]
+    : null;
 
   if (!country && !netname) return null;
 
