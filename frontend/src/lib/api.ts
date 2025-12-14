@@ -11,6 +11,7 @@ const apiClient = axios.create({
 
 // Function to fetch CSRF token
 let csrfToken: string | null = null;
+
 export const fetchCsrfToken = async () => {
   try {
     const response = await apiClient.get<{ csrfToken: string }>('/api/csrf-token');
@@ -25,7 +26,10 @@ export const fetchCsrfToken = async () => {
 // Request interceptor to include CSRF token for POST requests
 apiClient.interceptors.request.use(
   async (config) => {
-    if (['post', 'put', 'delete'].includes(config.method?.toLowerCase() || '')) {
+    const method = config.method?.toLowerCase();
+    const protectedMethods = ['post', 'put', 'delete', 'patch'];
+
+    if (protectedMethods.includes(method || '')) {
       if (!csrfToken) {
         await fetchCsrfToken();
       }
@@ -34,9 +38,9 @@ apiClient.interceptors.request.use(
       }
     }
     return config;
-  },
-  (error) => Promise.reject(error)
+  }
 );
+
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(

@@ -3,15 +3,19 @@ import dotenv from 'dotenv';
 import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
-import csrf from 'csurf';
+import cookieParser from 'cookie-parser';
+import { doubleCsrf } from "csrf-csrf"; // Use the named import directly
 import apicache from 'apicache';
 import apiRoutes from './routes/api.js';
-
 
 dotenv.config();
 
 const app = express();
 app.set('trust proxy', 1);
+
+// Standard Middlewares
+app.use(express.json());
+app.use(cookieParser(process.env.SESSION_SECRET)); // Use same secret as session
 
 const cache = apicache.middleware('1 minute', (req, res) => req.method === 'GET');
 
@@ -19,30 +23,27 @@ const allowedOrigins = [
   process.env.CORS_DEV_FRONTEND_URL_AND_PORT,
   'https://to_be_filed.net',
 ].filter(Boolean);
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+app.use(cors({
+  origin: allowedOrigins,
   credentials: true
 }));
 
+if (!process.env.SESSION_SECRET) {
+  console.error("FATAL: SESSION_SECRET is not defined in .env");
+  process.exit(1);
+}
 
+const CSRF_SECRET = process.env.SESSION_SECRET;
 
-// Apply session middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: CSRF_SECRET,
   resave: false,
   saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax', // Critical for CSRF cookies
     maxAge: 1000 * 60 * 60 * 24 // 24 hours
   }
 }));
@@ -53,46 +54,48 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- NEW CSRF SETUP ---
+// --- CSRF-CSRF CONFIGURATION ---
+const csrfOptions = {
+  getSecret: () => process.env.SESSION_SECRET,
+  cookieName: "x-csrf-token",
+  cookieOptions: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  },
+  size: 64,
+  ignoredMethods: ["GET", "HEAD", "OPTIONS"],
+  getTokenFromRequest: (req) => req.headers["x-csrf-token"],
+  getSessionIdentifier: (req) => req.sessionID,
+};
 
-// 1. Define the CSRF middleware
-const csrfProtection = csrf({ cookie: false });
+const csrfProtection = doubleCsrf(csrfOptions);
 
-// 2. Mount the token generation endpoint **before** the protection.
-// We only want the csrfProtection to run on this route to ATTACH req.csrfToken.
-// We define a dedicated token-fetching router for this.
+// 1. Update the extraction names for v4.x
+const {
+  generateCsrfToken,
+  doubleCsrfProtection,
+  invalidCsrfTokenError,
+} = csrfProtection;
 
-// Create a router for just the CSRF token endpoint
-const tokenRouter = express.Router();
-tokenRouter.get('/csrf-token', (req, res) => {
-    // This is the only place we need to generate and return the token
-    try {
-        const token = req.csrfToken();
-        res.json({ csrfToken: token });
-    } catch (error) {
-        console.error('Error generating CSRF token:', error);
-        res.status(500).json({ error: 'Failed to generate CSRF token' });
-    }
+// 2. GET Token Endpoint
+app.get("/api/csrf-token", (req, res) => {
+  // Use the new function name
+  const token = generateCsrfToken(req, res);
+  res.json({ csrfToken: token });
 });
 
-// Use the token router. For this endpoint only, we apply the middleware.
-// NOTE: We must ensure this route handler gets called BEFORE the error handler below.
-app.use('/api', csrfProtection, tokenRouter);
+// 2. Apply Protection to all other /api routes
+// This will ignore GET requests but validate POST/PUT/DELETE
+app.use("/api", doubleCsrfProtection, apiRoutes);
 
-
-// 3. Mount the main API routes with the cache middleware
-// Since apiRoutes contains ip_api.js and domain_api.js, and they need protection,
-// we apply csrfProtection directly to the apiRoutes block.
-app.use('/api', csrfProtection, apiRoutes);
-
-// Error handling for CSRF token validation failures
+// Updated Error Handler
 app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    console.log(`CSRF validation failed for ${req.method} ${req.url}`);
-    res.status(403).json({ error: 'Invalid CSRF token' });
+  if (err === invalidCsrfTokenError) {
+    res.status(403).json({ error: "csrf validation failed" });
   } else {
-    console.error('Unexpected error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
