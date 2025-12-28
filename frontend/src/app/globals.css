@@ -1,10 +1,21 @@
 /* frontend/src/app/globals.css */
-
 @import "tailwindcss";
+
+@theme {
+  --spacing-safe-top: env(safe-area-inset-top);
+  --spacing-safe-bottom: env(safe-area-inset-bottom);
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+html, body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
 }
 
 html.dark {
