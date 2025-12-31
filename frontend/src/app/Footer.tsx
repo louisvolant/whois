@@ -1,13 +1,13 @@
 // frontend/src/app/Footer.tsx
 "use client";
 
-import Link from 'next/link';
 import { externalLinks } from './links';
 import { useState, useEffect } from 'react';
+import { useIsStandalone } from '../hooks/useIsStandalone';
 
 export default function Footer() {
   const [isDarkMode, setIsDarkMode] = useState(false);
-
+  const isStandalone = useIsStandalone();
 
   // Sync with system preference on mount + respect manual toggle
   useEffect(() => {
@@ -34,15 +34,31 @@ export default function Footer() {
     localStorage.setItem('darkMode', String(newMode));
   };
 
+  // Handle click for PWA breakout
+  const handleExternalClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (isStandalone) {
+      e.preventDefault();
+      // Using window.open triggers the system browser interaction on iOS
+      window.open(href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <footer className="bg-white dark:bg-gray-900 py-4 mt-8 transition-colors duration-300 pb-[calc(1rem+var(--spacing-safe-bottom))]">
       <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-300">
         <div className="mb-4">
           {externalLinks.map((link, index) => (
             <span key={link.href}>
-              <Link href={link.href} className="mx-2 hover:text-gray-800 dark:hover:text-gray-100">
+              {/* Use native <a> for external links to avoid Next.js prefetching/internal routing */}
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => handleExternalClick(e, link.href)}
+                className="mx-2 hover:text-gray-800 dark:hover:text-gray-100 cursor-pointer"
+              >
                 {link.label}
-              </Link>
+              </a>
               {index < externalLinks.length - 1 && <span>|</span>}
             </span>
           ))}
