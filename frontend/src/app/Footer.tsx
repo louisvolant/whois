@@ -6,22 +6,21 @@ import { useState, useEffect } from 'react';
 import { useIsStandalone } from '../hooks/useIsStandalone';
 
 export default function Footer() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) return saved === 'true';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const isStandalone = useIsStandalone();
 
-  // Sync with system preference on mount + respect manual toggle
   useEffect(() => {
-    const saved = localStorage.getItem('darkMode');
-    if (saved !== null) {
-      const pref = saved === 'true';
-      setIsDarkMode(pref);
-      if (pref) document.documentElement.classList.add('dark');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(prefersDark);
-      if (prefersDark) document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;

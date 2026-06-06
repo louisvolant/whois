@@ -1,5 +1,4 @@
 // frontend/src/app/layout.tsx (Server Component)
-import { Inter } from 'next/font/google';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import Footer from './Footer';

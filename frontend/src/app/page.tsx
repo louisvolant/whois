@@ -26,7 +26,19 @@ function parseWhois(rawText: string) {
   return `${country || "Unknown"} - ${netname || "No description"}`;
 }
 
-function WhoisDisplay({ data }: { data: any }) {
+interface WhoisData {
+  raw?: string;
+  [key: string]: unknown;
+}
+
+interface QueryResult {
+  type?: string;
+  value?: string;
+  data?: WhoisData;
+  error?: string;
+}
+
+function WhoisDisplay({ data }: { data: WhoisData | null | undefined }) {
   if (!data) return <p className="text-gray-500 italic">Loading...</p>;
 
   const content = data.raw ? data.raw : JSON.stringify(data, null, 2);
@@ -51,9 +63,9 @@ function WhoisDisplay({ data }: { data: any }) {
 
 export default function Home() {
   const [clientIP, setClientIP] = useState<string | null>(null);
-  const [ipWhois, setIpWhois] = useState<any>(null);
+  const [ipWhois, setIpWhois] = useState<WhoisData | null>(null);
   const [input, setInput] = useState("");
-  const [queryResult, setQueryResult] = useState<any>(null);
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchClientConnection = useCallback(async () => {
@@ -102,7 +114,7 @@ export default function Home() {
         result = await getWhoisDomain(cleanInput);
         setQueryResult({ type: "Domain", value: cleanInput, data: result });
       }
-    } catch (err) {
+    } catch {
       setQueryResult({ error: "Lookup failed. Please check the format or try again." });
     }
   }
