@@ -27,7 +27,7 @@ A full-stack application for performing IP and Domain WHOIS lookups. The fronten
 
 ### 1. Prerequisites
 
-* Node.js (v18+)
+* Node.js (v24+, LTS recommended)
 * npm or yarn
 
 ### 2. Backend Setup (`/backend`)
