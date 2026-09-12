@@ -1,13 +1,13 @@
-// frontend/src/app/page.tsx
+// src/app/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { getClientIP, getWhoisIP, getWhoisDomain, fetchCsrfToken } from "../lib/api";
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Wifi, Search, Copy, Check } from "lucide-react";
 
-// --- HELPER: Extract Country and Description ---
+// --- Helper: extract country and description from raw WHOIS text ---
 function parseWhois(rawText: string) {
-  if (!rawText || typeof rawText !== 'string') return null;
+  if (!rawText || typeof rawText !== "string") return null;
 
   // Regex to find 'country: XX' and 'netname: YYY'
   const countryMatch = rawText.match(/^\s*country\s*:\s*(.+)$/im);
@@ -16,13 +16,10 @@ function parseWhois(rawText: string) {
     rawText.match(/^\s*(org-name|descr)\s*:\s*(.+)$/im);
 
   const country = countryMatch ? countryMatch[1].trim() : null;
-  const netname = netnameMatch
-    ? netnameMatch[2] ?? netnameMatch[1]
-    : null;
+  const netname = netnameMatch ? netnameMatch[2] ?? netnameMatch[1] : null;
 
   if (!country && !netname) return null;
 
-  // Return the format: "BE - Zscaler Brussels"
   return `${country || "Unknown"} - ${netname || "No description"}`;
 }
 
@@ -39,21 +36,44 @@ interface QueryResult {
 }
 
 function WhoisDisplay({ data }: { data: WhoisData | null | undefined }) {
+  const [copied, setCopied] = useState(false);
+
   if (!data) return <p className="text-gray-500 italic">Loading...</p>;
 
   const content = data.raw ? data.raw : JSON.stringify(data, null, 2);
-  const isSimpleMessage = typeof content === 'string' && content.length < 150 && !content.includes('\n');
+  const isSimpleMessage =
+    typeof content === "string" && content.length < 150 && !content.includes("\n");
 
   if (isSimpleMessage) {
     return (
-      <div className="p-4 bg-blue-50 text-blue-900 border border-blue-200 rounded-lg">
+      <div className="p-4 bg-blue-50 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200 border border-blue-200 dark:border-blue-800 rounded-lg">
         ℹ️ {content}
       </div>
     );
   }
 
+  const handleCopy = async () => {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy WHOIS data:", err);
+    }
+  };
+
   return (
     <div className="relative group">
+      <button
+        onClick={handleCopy}
+        type="button"
+        title="Copy WHOIS data"
+        className="absolute top-3 right-3 p-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm transition-colors text-xs flex items-center gap-1 backdrop-blur-sm z-10"
+      >
+        {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+        <span>{copied ? "Copied!" : "Copy"}</span>
+      </button>
       <pre className="text-xs md:text-sm font-mono whitespace-pre-wrap overflow-x-auto bg-slate-100 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
         {content}
       </pre>
@@ -62,167 +82,271 @@ function WhoisDisplay({ data }: { data: WhoisData | null | undefined }) {
 }
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"connection" | "manual">("connection");
   const [clientIP, setClientIP] = useState<string | null>(null);
   const [ipWhois, setIpWhois] = useState<WhoisData | null>(null);
   const [input, setInput] = useState("");
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [ipCopied, setIpCopied] = useState(false);
 
   const fetchClientConnection = useCallback(async () => {
-    setIsRefreshing(true); // Start refreshing state
+    setIsRefreshing(true);
     try {
-      // 1. Fetch IP
+      // 1. Fetch Client IP
       const data = await getClientIP();
       setClientIP(data.ip);
 
       // 2. Fetch WHOIS if IP is available
       if (data.ip) {
-          const whoisData = await getWhoisIP(data.ip);
-          setIpWhois(whoisData);
+        const whoisData = await getWhoisIP(data.ip);
+        setIpWhois(whoisData);
       }
     } catch (err) {
       console.error("Failed to load client connection data:", err);
-      // Optional: setIpWhois(null) or a custom error state
     } finally {
-      setIsRefreshing(false); // Stop refreshing state
+      setIsRefreshing(false);
     }
-  }, []); // Empty dependency array means this function is created once
-
-  useEffect(() => {
-    fetchCsrfToken().catch((err) => console.error('CSRF token fetch failed:', err));
   }, []);
 
-  // Initial load logic now calls the dedicated function
+  useEffect(() => {
+    fetchCsrfToken().catch((err) => console.error("CSRF token fetch failed:", err));
+  }, []);
+
   useEffect(() => {
     fetchClientConnection();
-  }, [fetchClientConnection]); // Dependency on fetchClientConnection is needed because it's wrapped in useCallback
+  }, [fetchClientConnection]);
 
   function looksLikeIP(value: string) {
     return /^\d{1,3}(\.\d{1,3}){3}$/.test(value.trim());
   }
 
-  async function handleLookup() {
-    if(!input) return;
+  async function handleLookup(lookupValue?: string) {
+    const target = (lookupValue || input).trim();
+    if (!target) return;
+
+    if (lookupValue) {
+      setInput(lookupValue);
+    }
+
+    setIsLookingUp(true);
     setQueryResult(null);
     try {
-      const cleanInput = input.trim();
       let result;
-      if (looksLikeIP(cleanInput)) {
-        result = await getWhoisIP(cleanInput);
-        setQueryResult({ type: "IP", value: cleanInput, data: result });
+      if (looksLikeIP(target)) {
+        result = await getWhoisIP(target);
+        setQueryResult({ type: "IP", value: target, data: result });
       } else {
-        result = await getWhoisDomain(cleanInput);
-        setQueryResult({ type: "Domain", value: cleanInput, data: result });
+        result = await getWhoisDomain(target);
+        setQueryResult({ type: "Domain", value: target, data: result });
       }
     } catch {
       setQueryResult({ error: "Lookup failed. Please check the format or try again." });
+    } finally {
+      setIsLookingUp(false);
     }
   }
 
-  // Determine the summary line for the connection section
+  const handleCopyIP = async () => {
+    if (!clientIP) return;
+    try {
+      await navigator.clipboard.writeText(clientIP);
+      setIpCopied(true);
+      setTimeout(() => setIpCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy IP address:", err);
+    }
+  };
+
   const whoisSummary = ipWhois?.raw ? parseWhois(ipWhois.raw) : null;
 
   return (
-    <main className="min-h-screen p-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100">
-      <div className="max-w-3xl mx-auto space-y-8">
-
-        <header className="mb-10 text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Network Tools</h1>
-            <p className="text-gray-500 mt-2">IP & Domain WHOIS Lookup</p>
+    <main className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <header className="text-center pt-2 pb-1">
+          <h1 className="text-3xl font-bold tracking-tight">Network Tools</h1>
+          <p className="text-gray-500 mt-2 text-sm sm:text-base">IP & Domain WHOIS Lookup</p>
         </header>
 
-        {/* SECTION 1: Your Information */}
-        <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-             <h2 className="text-lg font-semibold flex items-center gap-2">
+        {/* --- Top Navigation Tabs --- */}
+        <nav
+          aria-label="Lookup navigation modes"
+          className="grid grid-cols-2 p-1.5 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl border border-gray-300/60 dark:border-gray-700 shadow-sm"
+        >
+          <button
+            type="button"
+            onClick={() => setActiveTab("connection")}
+            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+              activeTab === "connection"
+                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            }`}
+          >
+            <Wifi size={18} className="shrink-0" />
+            <span className="truncate">Your Connection</span>
+            {clientIP && (
+              <span className="hidden md:inline-block ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-mono">
+                {clientIP}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("manual")}
+            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+              activeTab === "manual"
+                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            }`}
+          >
+            <Search size={18} className="shrink-0" />
+            <span className="truncate">Manual Lookup</span>
+          </button>
+        </nav>
+
+        {/* --- View 1: Your Connection --- */}
+        {activeTab === "connection" && (
+          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
                 📍 Your Connection
-             </h2>
-             {/* REFRESH BUTTON */}
-             <button
+              </h2>
+              <button
+                type="button"
                 onClick={fetchClientConnection}
                 disabled={isRefreshing}
-                className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-wait rounded-full"
+                className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-wait rounded-full cursor-pointer"
                 title="Refresh Connection Data"
-             >
-                <RefreshCcw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-             </button>
-             {/* END REFRESH BUTTON */}
-          </div>
+              >
+                <RefreshCcw size={18} className={isRefreshing ? "animate-spin" : ""} />
+              </button>
+            </div>
 
-          <div className="p-6 space-y-6">
-            <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Your IP Address</label>
-                <div className="mt-1 text-2xl font-mono text-blue-600 dark:text-blue-400 font-medium">
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                  Your IP Address
+                </label>
+                <div className="mt-1 flex items-center gap-3">
+                  <span className="text-2xl font-mono text-blue-600 dark:text-blue-400 font-semibold">
                     {clientIP || (isRefreshing ? "Refreshing..." : "Loading...")}
+                  </span>
+                  {clientIP && (
+                    <button
+                      type="button"
+                      onClick={handleCopyIP}
+                      className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
+                      title="Copy IP Address"
+                    >
+                      {ipCopied ? (
+                        <Check size={16} className="text-green-500" />
+                      ) : (
+                        <Copy size={16} />
+                      )}
+                    </button>
+                  )}
                 </div>
-                {/* --- SUMMARY --- */}
+
                 {whoisSummary && (
-                  <div className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-300">
                     {whoisSummary}
                   </div>
                 )}
-            </div>
+              </div>
 
-            <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">WHOIS Data</label>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                  WHOIS Data
+                </label>
                 <WhoisDisplay data={ipWhois} />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* SECTION 2: Lookup Tool */}
-        <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-             <h2 className="text-lg font-semibold flex items-center gap-2">
+        {/* --- View 2: Manual Lookup --- */}
+        {activeTab === "manual" && (
+          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
                 🔎 Manual Lookup
-             </h2>
-          </div>
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Query registration information for any public IP address or domain name.
+              </p>
+            </div>
 
-          <div className="p-6 space-y-4">
-            <div className="flex gap-2">
-                <input
+            <div className="p-6 space-y-5">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <input
                     type="text"
-                    placeholder="Enter IP (8.8.8.8) or Domain (github.com)"
+                    placeholder="Enter IP (e.g. 1.1.1.1) or Domain (e.g. github.com)"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-                    className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                />
-                <button
-                    onClick={handleLookup}
-                    disabled={!input}
-                    className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    Lookup
-                </button>
-            </div>
-
-            {queryResult && (
-                <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {queryResult.error ? (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100">
-                            {queryResult.error}
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-500">
-                                    Result for {queryResult.type}: <span className="text-gray-900 dark:text-white">{queryResult.value}</span>
-                                </span>
-                            </div>
-                            {/* Optional: Add summary for lookup results too */}
-                            {queryResult.data?.raw && (
-                              <div className="text-sm font-bold text-blue-500 mb-2">
-                                {parseWhois(queryResult.data.raw)}
-                              </div>
-                            )}
-                            <WhoisDisplay data={queryResult.data} />
-                        </div>
-                    )}
+                    onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
                 </div>
-            )}
-          </div>
-        </section>
+                <button
+                  type="button"
+                  onClick={() => handleLookup()}
+                  disabled={!input || isLookingUp}
+                  className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                >
+                  {isLookingUp && <RefreshCcw size={16} className="animate-spin" />}
+                  <span>{isLookingUp ? "Looking up..." : "Lookup"}</span>
+                </button>
+              </div>
+
+              {/* Quick sample chips */}
+              <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+                <span>Quick tests:</span>
+                {["cloudflare.com", "google.com", "1.1.1.1", "8.8.8.8"].map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => handleLookup(example)}
+                    className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-mono transition-colors cursor-pointer border border-gray-200 dark:border-gray-600"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+
+              {queryResult && (
+                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  {queryResult.error ? (
+                    <div className="p-4 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 rounded-lg border border-red-100 dark:border-red-900">
+                      {queryResult.error}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500">
+                          Result for {queryResult.type}:{" "}
+                          <span className="text-gray-900 dark:text-white font-semibold font-mono">
+                            {queryResult.value}
+                          </span>
+                        </span>
+                      </div>
+
+                      {queryResult.data?.raw && (
+                        <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          {parseWhois(queryResult.data.raw)}
+                        </div>
+                      )}
+
+                      <WhoisDisplay data={queryResult.data} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
