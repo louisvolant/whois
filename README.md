@@ -7,7 +7,7 @@ A modern full-stack Next.js application for performing IP and Domain WHOIS looku
 ## 🚀 Key Features
 
 * **Canonical Next.js App Router Structure:** Single, unified codebase with all UI pages and API Route Handlers under `src/app/`.
-* **Tabbed User Interface:** Top-level segmented navigation switching instantly between "Your Connection" and "Manual Lookup", avoiding tedious scrolling through large WHOIS reports.
+* **Mobile & PWA Optimized:** Compact, responsive top-level segmented navigation tailored for smartphone screens, with gesture and double-tap zoom prevention for a native app feel.
 * **Client IP Detection & Fast Copy:** Automatically identifies the user's IP address (`src/app/api/ip/route.ts`) with one-click clipboard copying and visual feedback.
 * **WHOIS Lookups over TCP (Port 43):** Live WHOIS resolution for both IP addresses (`/api/whois/[ip]`) and domain names (`/api/domain-whois`) via `whoiser`, complete with quick-test sample chips (`cloudflare.com`, `google.com`, `1.1.1.1`, etc.).
 * **Cloudflare Workers Compatible:** Powered by `@opennextjs/cloudflare` with `nodejs_compat` enabling native TCP socket connections over port 43 at the edge.
@@ -27,11 +27,12 @@ A modern full-stack Next.js application for performing IP and Domain WHOIS looku
 │   │   │   ├── domain-whois/# GET /api/domain-whois?domain=...
 │   │   │   ├── ip/         # GET /api/ip
 │   │   │   └── whois/[ip]/ # GET /api/whois/:ip
+│   │   ├── components/     # App components (PwaZoomPrevention)
 │   │   ├── Footer.tsx      # Footer component
-│   │   ├── globals.css     # Global styles
-│   │   ├── layout.tsx      # Root App Router layout
+│   │   ├── globals.css     # Global styles (safe areas, touch-action)
+│   │   ├── layout.tsx      # Root App Router layout (viewport, metadata)
 │   │   ├── links.ts        # Navigation links
-│   │   └── page.tsx        # Main application page
+│   │   └── page.tsx        # Main application page (responsive tabbed UI)
 │   └── lib/
 │       └── api.ts          # Frontend API client
 ├── open-next.config.ts     # OpenNext Cloudflare configuration
