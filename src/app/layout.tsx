@@ -4,11 +4,15 @@ import type { Metadata, Viewport } from 'next';
 import Footer from './Footer';
 import Image from 'next/image';
 
-// 1. Separate Viewport export
+import PwaZoomPrevention from './components/PwaZoomPrevention';
+
+// 1. Separate Viewport export with zoom prevention for mobile and PWA
 export const viewport: Viewport = {
   themeColor: '#000000',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
 };
 
@@ -33,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="antialiased bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 transition-colors duration-300">
+        <PwaZoomPrevention />
         <header className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 text-white shadow-md pt-safe-top">
           <div className="container mx-auto px-4 py-4 flex items-center">
             <Image
