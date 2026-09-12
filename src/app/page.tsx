@@ -169,24 +169,23 @@ export default function Home() {
           <p className="text-gray-500 mt-1 sm:mt-2 text-xs sm:text-base">IP & Domain WHOIS Lookup</p>
         </header>
 
-        {/* --- Top Navigation Tabs (Responsive & Compact on Mobile/PWA) --- */}
+        {/* --- Top Navigation Tabs (Segmented Control) --- */}
         <div className="flex justify-center w-full">
           <nav
             aria-label="Lookup navigation modes"
-            className="grid grid-cols-2 p-1 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl border border-gray-300/60 dark:border-gray-700 shadow-sm w-full max-w-xs sm:max-w-md"
+            className="grid grid-cols-2 p-1 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl border border-gray-300/60 dark:border-gray-700 shadow-sm w-full max-w-sm sm:max-w-md"
           >
             <button
               type="button"
               onClick={() => setActiveTab("connection")}
-              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
                 activeTab === "connection"
                   ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               }`}
             >
               <Wifi size={16} className="shrink-0" />
-              <span className="truncate sm:hidden">Connection</span>
-              <span className="hidden sm:inline truncate">Your Connection</span>
+              <span className="truncate">Your Connection</span>
               {clientIP && (
                 <span className="hidden lg:inline-block ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-mono">
                   {clientIP}
@@ -197,15 +196,14 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setActiveTab("manual")}
-              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
                 activeTab === "manual"
                   ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               }`}
             >
               <Search size={16} className="shrink-0" />
-              <span className="truncate sm:hidden">Lookup</span>
-              <span className="hidden sm:inline truncate">Manual Lookup</span>
+              <span className="truncate">Manual Lookup</span>
             </button>
           </nav>
         </div>
