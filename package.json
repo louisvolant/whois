@@ -1,0 +1,11 @@
+{
+  "name": "whois-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend",
+    "dev:worker": "wrangler dev",
+    "deploy": "npm run build:frontend && wrangler deploy --keep-vars"
+  }
+}
