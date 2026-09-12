@@ -7,8 +7,9 @@ A modern full-stack Next.js application for performing IP and Domain WHOIS looku
 ## 🚀 Key Features
 
 * **Canonical Next.js App Router Structure:** Single, unified codebase with all UI pages and API Route Handlers under `src/app/`.
-* **Client IP Detection:** Automatically identifies the user's IP address (`src/app/api/ip/route.ts`), prioritizing Cloudflare's `cf-connecting-ip` header in production.
-* **WHOIS Lookups over TCP (Port 43):** Live WHOIS resolution for both IP addresses (`/api/whois/[ip]`) and domain names (`/api/domain-whois`) via `whoiser`.
+* **Tabbed User Interface:** Top-level segmented navigation switching instantly between "Your Connection" and "Manual Lookup", avoiding tedious scrolling through large WHOIS reports.
+* **Client IP Detection & Fast Copy:** Automatically identifies the user's IP address (`src/app/api/ip/route.ts`) with one-click clipboard copying and visual feedback.
+* **WHOIS Lookups over TCP (Port 43):** Live WHOIS resolution for both IP addresses (`/api/whois/[ip]`) and domain names (`/api/domain-whois`) via `whoiser`, complete with quick-test sample chips (`cloudflare.com`, `google.com`, `1.1.1.1`, etc.).
 * **Cloudflare Workers Compatible:** Powered by `@opennextjs/cloudflare` with `nodejs_compat` enabling native TCP socket connections over port 43 at the edge.
 * **Edge Caching:** Caches WHOIS lookup responses via `Cache-Control` headers to optimize response times and reduce queries to upstream registries.
 * **Dashboard Variable Preservation:** Preconfigured with `keep_vars = true` in `wrangler.toml` to protect Cloudflare Dashboard environment variables and secrets from being overwritten.
