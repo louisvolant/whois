@@ -16,4 +16,7 @@ export const externalLinks: LinkItem[] = [
   { label: 'Build My CV', href: 'https://buildmycv.net' },
   { label: 'My 20 years old blog', href: 'https://www.abricocotier.fr' },
   { label: 'Currency Converter', href: 'https://currency-converter-pwa-js.vercel.app/' },
+  { label: 'myfilmlist.net', href: 'https://www.myfilmlist.net' },
+  { label: 'FuelStats', href: 'https://www.fuelstats.net' },
+  { label: 'OpenSkipass', href: 'https://www.openskipass.com' },
 ];
