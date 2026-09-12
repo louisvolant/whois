@@ -42,3 +42,8 @@ next-env.d.ts
 .idea
 sw.js
 
+# cloudflare
+.wrangler/
+backend/.wrangler/
+frontend/out/
+
