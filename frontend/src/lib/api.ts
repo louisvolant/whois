@@ -4,9 +4,9 @@ import axios from "axios";
 console.log('API_URL value at runtime:', process.env.NEXT_PUBLIC_API_URL);
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "",
   withCredentials: true,
-  timeout: 3000,
+  timeout: 10000,
 });
 
 // Function to fetch CSRF token
