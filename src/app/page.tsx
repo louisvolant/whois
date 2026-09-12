@@ -74,7 +74,7 @@ function WhoisDisplay({ data }: { data: WhoisData | null | undefined }) {
         {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
         <span>{copied ? "Copied!" : "Copy"}</span>
       </button>
-      <pre className="text-xs md:text-sm font-mono whitespace-pre-wrap overflow-x-auto bg-slate-100 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
+      <pre className="text-xs md:text-sm font-mono whitespace-pre-wrap break-words break-all overflow-x-auto bg-slate-100 dark:bg-slate-900 p-3 sm:p-4 rounded-lg border border-slate-200 dark:border-slate-700 max-h-96 overflow-y-auto">
         {content}
       </pre>
     </div>
@@ -162,55 +162,59 @@ export default function Home() {
   const whoisSummary = ipWhois?.raw ? parseWhois(ipWhois.raw) : null;
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <main className="min-h-screen px-3 py-4 sm:p-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+      <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6">
         <header className="text-center pt-2 pb-1">
-          <h1 className="text-3xl font-bold tracking-tight">Network Tools</h1>
-          <p className="text-gray-500 mt-2 text-sm sm:text-base">IP & Domain WHOIS Lookup</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Network Tools</h1>
+          <p className="text-gray-500 mt-1 sm:mt-2 text-xs sm:text-base">IP & Domain WHOIS Lookup</p>
         </header>
 
-        {/* --- Top Navigation Tabs --- */}
-        <nav
-          aria-label="Lookup navigation modes"
-          className="grid grid-cols-2 p-1.5 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl border border-gray-300/60 dark:border-gray-700 shadow-sm"
-        >
-          <button
-            type="button"
-            onClick={() => setActiveTab("connection")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeTab === "connection"
-                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-            }`}
+        {/* --- Top Navigation Tabs (Responsive & Compact on Mobile/PWA) --- */}
+        <div className="flex justify-center w-full">
+          <nav
+            aria-label="Lookup navigation modes"
+            className="grid grid-cols-2 p-1 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl border border-gray-300/60 dark:border-gray-700 shadow-sm w-full max-w-xs sm:max-w-md"
           >
-            <Wifi size={18} className="shrink-0" />
-            <span className="truncate">Your Connection</span>
-            {clientIP && (
-              <span className="hidden md:inline-block ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-mono">
-                {clientIP}
-              </span>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("connection")}
+              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === "connection"
+                  ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              }`}
+            >
+              <Wifi size={16} className="shrink-0" />
+              <span className="truncate sm:hidden">Connection</span>
+              <span className="hidden sm:inline truncate">Your Connection</span>
+              {clientIP && (
+                <span className="hidden lg:inline-block ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-mono">
+                  {clientIP}
+                </span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("manual")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeTab === "manual"
-                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-            }`}
-          >
-            <Search size={18} className="shrink-0" />
-            <span className="truncate">Manual Lookup</span>
-          </button>
-        </nav>
+            <button
+              type="button"
+              onClick={() => setActiveTab("manual")}
+              className={`min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === "manual"
+                  ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              }`}
+            >
+              <Search size={16} className="shrink-0" />
+              <span className="truncate sm:hidden">Lookup</span>
+              <span className="hidden sm:inline truncate">Manual Lookup</span>
+            </button>
+          </nav>
+        </div>
 
         {/* --- View 1: Your Connection --- */}
         {activeTab === "connection" && (
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
                 📍 Your Connection
               </h2>
               <button
@@ -224,20 +228,20 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
                   Your IP Address
                 </label>
-                <div className="mt-1 flex items-center gap-3">
-                  <span className="text-2xl font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                <div className="mt-1 flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <span className="text-xl sm:text-2xl font-mono text-blue-600 dark:text-blue-400 font-semibold break-all">
                     {clientIP || (isRefreshing ? "Refreshing..." : "Loading...")}
                   </span>
                   {clientIP && (
                     <button
                       type="button"
                       onClick={handleCopyIP}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
+                      className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer shrink-0"
                       title="Copy IP Address"
                     >
                       {ipCopied ? (
@@ -250,7 +254,7 @@ export default function Home() {
                 </div>
 
                 {whoisSummary && (
-                  <div className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                  <div className="mt-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 break-words">
                     {whoisSummary}
                   </div>
                 )}
@@ -269,8 +273,8 @@ export default function Home() {
         {/* --- View 2: Manual Lookup --- */}
         {activeTab === "manual" && (
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
                 🔎 Manual Lookup
               </h2>
               <p className="text-xs text-gray-500 mt-1">
@@ -278,23 +282,23 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <input
                     type="text"
                     placeholder="Enter IP (e.g. 1.1.1.1) or Domain (e.g. github.com)"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    className="w-full p-2.5 sm:p-3 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => handleLookup()}
                   disabled={!input || isLookingUp}
-                  className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
                 >
                   {isLookingUp && <RefreshCcw size={16} className="animate-spin" />}
                   <span>{isLookingUp ? "Looking up..." : "Lookup"}</span>
