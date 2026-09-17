@@ -21,14 +21,19 @@ export const metadata: Metadata = {
   title: 'Whois IP & Domain',
   description: 'A tool to get whois for IP&Domain',
   icons: {
-    icon: '/icon-whois.png',
-    apple: '/icons/apple-touch-icon.png',
+    icon: [
+      { url: '/icon-whois.png', type: 'image/png', sizes: '512x512' },
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: { url: '/favicon.ico', type: 'image/x-icon' },
+    apple: [{ url: '/icons/apple-touch-icon.png', type: 'image/png', sizes: '180x180' }],
   },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'SuperApp',
+    title: 'Whois',
   },
 };
 

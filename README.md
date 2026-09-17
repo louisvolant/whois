@@ -20,6 +20,13 @@ A modern full-stack Next.js application for performing IP and Domain WHOIS looku
 
 ```
 ├── public/                 # Static assets (favicons, icons, manifest)
+│   ├── icons/              # Generated PWA icon set (see scripts/generate-icons.mjs)
+│   ├── favicon.ico         # Classic multi-size favicon (16/32/48)
+│   ├── icon.svg            # Vector favicon for modern browsers
+│   ├── icon-whois.png      # 512x512 "any" PWA icon (header logo + manifest)
+│   └── manifest.json       # Web App Manifest
+├── scripts/
+│   └── generate-icons.mjs  # Procedural icon generator (no dependencies)
 ├── src/
 │   ├── app/
 │   │   ├── api/            # Next.js Route Handlers
@@ -76,6 +83,37 @@ npm run dev
 ```
 
 The application will be accessible at `http://localhost:3000` with hot reloading and local API route execution.
+
+---
+
+## 🎨 PWA Icons & Favicon
+
+The app icon is a blue → purple gradient tile (matching the header) with a white
+magnifying glass containing a stylized globe. All icons are generated
+procedurally by `scripts/generate-icons.mjs` (pure Node.js, no dependencies) and
+must be regenerated after any design change:
+
+```bash
+node scripts/generate-icons.mjs
+```
+
+Generated output:
+
+| File | Size | Purpose |
+| :--- | :--- | :--- |
+| `public/favicon.ico` | 16 / 32 / 48 | Classic browser favicon |
+| `public/icon.svg` | vector | Modern-browser favicon (used in `layout.tsx` metadata) |
+| `public/icon-whois.png` | 512×512 | `purpose: any` — home screen / header logo / Chrome install |
+| `public/icons/icon-192.png` | 192×192 | `purpose: any` Chrome install icon |
+| `public/icons/maskable-192.png` | 192×192 | `purpose: maskable` — content kept in the 80% safe zone |
+| `public/icons/maskable-512.png` | 512×512 | `purpose: maskable` — content kept in the 80% safe zone |
+| `public/icons/apple-touch-icon.png` | 180×180 | iOS home screen (fully opaque, no transparency) |
+
+> **iOS note:** Apple ignores the Web App Manifest icons and uses
+> `apple-touch-icon.png`, which must be opaque (iOS recolors transparent pixels
+> to black). The generated file uses the maskable layout (full-bleed background
+> with content centered in the 80% safe zone) so it renders cleanly under iOS
+> home-screen corner masking.
 
 ---
 

@@ -1,16 +1,37 @@
 {
+  "name": "Whois IP & Domain",
+  "short_name": "Whois",
+  "description": "A tool to get whois for IP & Domain",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff",
-  "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
-  "name": "Whois IP&Domain PWA",
-  "short_name": "Whois",
   "icons": [
     {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icon-whois.png",
-      "sizes": "128x128",
-      "type": "image/png"
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
