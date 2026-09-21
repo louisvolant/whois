@@ -1,8 +1,8 @@
 // frontend/src/app/Footer.tsx
 "use client";
 
-import { externalLinks } from './links';
-import { useState, useEffect } from 'react';
+import { footerLinks } from './links';
+import { useState, useEffect, Fragment } from 'react';
 import { useIsStandalone } from '../hooks/useIsStandalone';
 
 export default function Footer() {
@@ -44,35 +44,31 @@ export default function Footer() {
 
   return (
     <footer className="bg-white dark:bg-gray-900 py-4 mt-8 transition-colors duration-300 pb-[calc(1rem+var(--spacing-safe-bottom))]">
-      <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-300">
-        <div className="mb-4">
-          {externalLinks.map((link, index) => (
-            <span key={link.href}>
-              {/* Use native <a> for external links to avoid Next.js prefetching/internal routing */}
-              <a
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => handleExternalClick(e, link.href)}
-                className="mx-2 hover:text-gray-800 dark:hover:text-gray-100 cursor-pointer"
-              >
-                {link.label}
-              </a>
-              {index < externalLinks.length - 1 && <span>|</span>}
-            </span>
-          ))}
-        </div>
+      <div className="container mx-auto px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
+        <span>© {new Date().getFullYear()} LouisVolant.com. All rights reserved.</span>
+
+        {footerLinks.map((link) => (
+          <Fragment key={link.href}>
+            <span className="text-gray-300 dark:text-gray-700">|</span>
+            {/* Use native <a> for external links to avoid Next.js prefetching/internal routing */}
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => handleExternalClick(e, link.href)}
+              className="hover:text-gray-800 dark:hover:text-gray-100 cursor-pointer"
+            >
+              {link.label}
+            </a>
+          </Fragment>
+        ))}
 
         <button
           onClick={toggleDarkMode}
-          className="py-2 px-4 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-gray-200"
+          className="ml-1 px-3 py-1 bg-gray-300 dark:bg-gray-700 rounded-full hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-gray-800 dark:text-gray-200"
         >
-          Switch to {isDarkMode ? 'Light' : 'Dark'} Mode
+          {isDarkMode ? '☀️ Light' : '🌙 Dark'} Mode
         </button>
-
-        <div className="mt-4">
-          © {new Date().getFullYear()} LouisVolant.com. All rights reserved.
-        </div>
       </div>
     </footer>
   );

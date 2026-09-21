@@ -38,7 +38,7 @@ A modern full-stack Next.js application for performing IP and Domain WHOIS looku
 │   │   ├── Footer.tsx      # Footer component
 │   │   ├── globals.css     # Global styles (safe areas, touch-action)
 │   │   ├── layout.tsx      # Root App Router layout (viewport, metadata)
-│   │   ├── links.ts        # External network sites and footer links
+│   │   ├── links.ts        # Footer links
 │   │   └── page.tsx        # Main application page (responsive tabbed UI)
 │   └── lib/
 │       └── api.ts          # Frontend API client
